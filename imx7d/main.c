@@ -8,6 +8,7 @@
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/repl.h"
+#include "py/stackctrl.h"
 #include "py/gc.h"
 #include "lib/utils/pyexec.h"
 
@@ -32,14 +33,17 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 
 static char *stack_top;
-static char heap[2048];
+extern uint32_t _heap_start, _heap_end, _ram_end;
 
 int main(int argc, char **argv) {
     int stack_dummy;
     stack_top = (char*)&stack_dummy;
 
+    mp_stack_ctrl_init();
+    mp_stack_set_limit((char*)&_ram_end - (char*)&_heap_end - 1024);
+
     #if MICROPY_ENABLE_GC
-    gc_init(heap, heap + sizeof(heap));
+    gc_init(&_heap_start, &_heap_end);
     #endif
     mp_init();
     #if MICROPY_REPL_EVENT_DRIVEN

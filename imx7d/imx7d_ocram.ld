@@ -8,12 +8,17 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x00900000, LENGTH = 0x20000 /* entire ocram */
-    RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 0x8000 /* TCMU 64 KiB */
+    FLASH (rx)      : ORIGIN = 0x00900000, LENGTH = 0x20000 /* 128kB ocram */
+    TCRAM (xrw)     : ORIGIN = 0x20000000, LENGTH = 0x8000 /* TCMU 32 KiB */
+    RAM (xrw)       : ORIGIN = 0x20220000, LENGTH = 0x20000 /* 128kB ocram_epdc */
 }
  
 /* top end of the stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);
+
+/* RAM extents for the garbage collector */
+_ram_end = ORIGIN(RAM) + LENGTH(RAM);
+_heap_end = 0x2023c000; /* tunable */
 
 /* define output sections */
 SECTIONS
@@ -59,6 +64,15 @@ SECTIONS
 
         . = ALIGN(4);
         _ebss = .;         /* define a global symbol at bss end; used by startup code */
+    } >RAM
+
+    /* this is to define the start of the heap */
+    .heap :
+    {
+        . = ALIGN(4);
+	PROVIDE ( end = . );
+	PROVIDE ( _end = . );
+        _heap_start = .;    /* define a global symbol at heap start */
     } >RAM
 
     .ARM.attributes 0 : { *(.ARM.attributes) }
