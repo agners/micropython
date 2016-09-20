@@ -254,15 +254,15 @@ uint32_t CCM_ANALOG_GetVideoPllFreq(CCM_ANALOG_Type * base)
  *END**************************************************************************/
 uint32_t CCM_ANALOG_GetPfdFreq(CCM_ANALOG_Type * base, uint32_t pfdFrac)
 {
-    uint32_t main, frac;
+    uint32_t mainf, frac;
 
     /* PFD should work with system PLL without bypass */
     assert(!CCM_ANALOG_IsPllBypassed(base, ccmAnalogPll480Control));
 
-    main = CCM_ANALOG_GetSysPllFreq(base);
+    mainf = CCM_ANALOG_GetSysPllFreq(base);
     frac = CCM_ANALOG_GetPfdFrac(base, pfdFrac);
 
-    return main / frac * 18; 
+    return mainf / frac * 18;
 }
 
 /*******************************************************************************
