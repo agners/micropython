@@ -7,7 +7,7 @@
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 #define MICROPY_EMIT_X64            (0)
-#define MICROPY_EMIT_THUMB          (0)
+#define MICROPY_EMIT_THUMB          (1)
 #define MICROPY_EMIT_INLINE_THUMB   (0)
 #define MICROPY_COMP_MODULE_CONST   (0)
 #define MICROPY_COMP_CONST          (0)
@@ -78,7 +78,7 @@ extern const struct _mp_obj_fun_builtin_t mp_builtin_open_obj;
 #include <alloca.h>
 
 #define MICROPY_HW_BOARD_NAME "minimal"
-#define MICROPY_HW_MCU_NAME "unknown-cpu"
+#define MICROPY_HW_MCU_NAME "IMX7D_M4"
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)

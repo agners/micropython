@@ -54,7 +54,7 @@ void SystemInit(void)
 #if defined(__CC_ARM)
     extern uint32_t Image$$VECTOR_ROM$$Base[];
 #else
-    extern uint32_t __VECTOR_TABLE[];
+    extern uint32_t __isr_vector[];
 #endif
 
     /* Enable FPU */
@@ -183,7 +183,7 @@ void SystemInit(void)
 #if defined(__CC_ARM)
     SCB->VTOR = (uint32_t)Image$$VECTOR_ROM$$Base + VECT_TAB_OFFSET;
 #else
-    SCB->VTOR = (uint32_t)__VECTOR_TABLE + VECT_TAB_OFFSET;
+    SCB->VTOR = (uint32_t)__isr_vector + VECT_TAB_OFFSET;
 #endif
 }
 

@@ -15,15 +15,19 @@ endif
 INC += -I.
 INC += -I..
 INC += -I../lib/mp-readline
+INC += -I./boards/imx7_colibri_m4/
 INC += -I./platform/devices/MCIMX7D/startup/
-INC += -I./platform/devices/MCIMX7D/include/
+INC += -I./platform/devices/
 INC += -I./platform/CMSIS/Include/
+INC += -I./platform/drivers/inc/
+INC += -I./platform/utilities/inc/
 INC += -I$(BUILD)
 
 ifeq ($(CROSS), 1)
 DFU = ../tools/dfu.py
 PYDFU = ../tools/pydfu.py
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
+CFLAGS_CORTEX_M4 += -DCPU_MCIMX7D_M4
 CFLAGS = $(INC) -Wall -Werror -ansi -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 else
 CFLAGS = -m32 $(INC) -Wall -Werror -ansi -std=gnu99 $(COPT)
@@ -45,21 +49,27 @@ endif
 LIBS =
 
 SRC_C = \
-	platform/devices/MCIMX7D/startup/system_MCIMX7D_M4.c \
 	main.c \
 	uart_core.c \
+	boards/imx7_colibri_m4/board.c \
+	boards/imx7_colibri_m4/pin_mux.c \
+	boards/imx7_colibri_m4/clock_freq.c \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	$(BUILD)/_frozen_mpy.c \
 
-SRC_O = \
-	platform/devices/MCIMX7D/startup/gcc/startup_MCIMX7D_M4.o
+SRC_DRV_C = \
+	platform/drivers/src/ccm_analog_imx7d.c \
+	platform/drivers/src/ccm_imx7d.c \
+	platform/drivers/src/uart_imx.c \
+	platform/utilities/src/debug_console_imx.c \
+	platform/utilities/src/print_scan.c \
 
 OBJ = $(PY_O)
+OBJ += $(addprefix $(BUILD)/, $(SRC_DRV_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_O))
 
 ifeq ($(CROSS), 1)
 all: $(BUILD)/firmware.dfu

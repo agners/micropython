@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <board.h>
+#include <debug_console_imx.h>
 
 #include "py/nlr.h"
 #include "py/compile.h"
@@ -94,8 +96,6 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
 }
 #endif
 
-#if MICROPY_MIN_USE_CORTEX_CPU
-
 // this is a minimal IRQ and reset framework for any Cortex-M CPU
 
 extern uint32_t _estack, _sidata, _sdata, _edata, _sbss, _ebss;
@@ -121,7 +121,7 @@ void Default_Handler(void) {
     for (;;) {
     }
 }
-/*
+
 uint32_t isr_vector[] __attribute__((section(".isr_vector"))) = {
     (uint32_t)&_estack,
     (uint32_t)&Reset_Handler,
@@ -140,30 +140,6 @@ uint32_t isr_vector[] __attribute__((section(".isr_vector"))) = {
     (uint32_t)&Default_Handler, // PendSV_Handler
     (uint32_t)&Default_Handler, // SysTick_Handler
 };
-*/
-void _start(void) {
-    // when we get here: stack is initialised, bss is clear, data is copied
-
-    // SCB->CCR: enable 8-byte stack alignment for IRQ handlers, in accord with EABI
-    *((volatile uint32_t*)0xe000ed14) |= 1 << 9;
-
-    // initialise the cpu and peripherals
-    #if MICROPY_MIN_USE_STM32_MCU
-    void stm32_init(void);
-    stm32_init();
-    #endif
-
-    // now that we have a basic system up and running we can call main
-    main(0, NULL);
-
-    // we must not return
-    for (;;) {
-    }
-}
-
-#endif
-
-#if MICROPY_MIN_USE_STM32_MCU
 
 // this is minimal set-up code for an STM32 MCU
 
@@ -225,30 +201,37 @@ void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
 #define gpio_low(gpio, pin) do { gpio->BSRRH = (1 << (pin)); } while (0)
 #define gpio_high(gpio, pin) do { gpio->BSRRL = (1 << (pin)); } while (0)
 
-void stm32_init(void) {
-    // basic MCU config
-    RCC->CR |= (uint32_t)0x00000001; // set HSION
-    RCC->CFGR = 0x00000000; // reset all
-    RCC->CR &= (uint32_t)0xfef6ffff; // reset HSEON, CSSON, PLLON
-    RCC->PLLCFGR = 0x24003010; // reset PLLCFGR
-    RCC->CR &= (uint32_t)0xfffbffff; // reset HSEBYP
-    RCC->CIR = 0x00000000; // disable IRQs
+void imx7d_init(void) {
+    /* Board specific RDC settings */
+    BOARD_RdcInit();
 
-    // leave the clock as-is (internal 16MHz)
+    /* Board specific clock settings */
+    BOARD_ClockInit();
 
-    // enable GPIO clocks
-    RCC->AHB1ENR |= 0x00000003; // GPIOAEN, GPIOBEN
+    /* initialize debug uart */
+    dbg_uart_init();
+    printf("\n\n");
 
-    // turn on an LED! (on pyboard it's the red one)
-    gpio_init(GPIOA, 13, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
-    gpio_high(GPIOA, 13);
+    /* RDC MU*/
+    RDC_SetPdapAccess(RDC, BOARD_MU_RDC_PDAP, 3 << (BOARD_DOMAIN_ID * 2), false, false);
 
-    // enable UART1 at 9600 baud (TX=B6, RX=B7)
-    gpio_init(GPIOB, 6, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
-    gpio_init(GPIOB, 7, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
-    RCC->APB2ENR |= 0x00000010; // USART1EN
-    USART1->BRR = (104 << 4) | 3; // 16MHz/(16*104.1875) = 9598 baud
-    USART1->CR1 = 0x0000200c; // USART enable, tx enable, rx enable
+    /* Enable clock gate for MU*/
+    CCM_ControlGate(CCM, BOARD_MU_CCM_CCGR, ccmClockNeededRun);
 }
 
-#endif
+void _start(void) {
+    // when we get here: stack is initialised, bss is clear, data is copied
+
+    // SCB->CCR: enable 8-byte stack alignment for IRQ handlers, in accord with EABI
+    *((volatile uint32_t*)0xe000ed14) |= 1 << 9;
+
+    // initialise the cpu and peripherals
+    imx7d_init();
+
+    // now that we have a basic system up and running we can call main
+    main(0, NULL);
+
+    // we must not return
+    for (;;) {
+    }
+}

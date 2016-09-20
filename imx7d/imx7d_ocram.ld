@@ -2,10 +2,13 @@
     GNU linker script for NXP i.MX 7Dual Cortex-M4 core
 */
 
+/* Entry Point */
+ENTRY(Reset_Handler)
+
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x20200000, LENGTH = 0x20000 /* entire ocram */
+    FLASH (rx)      : ORIGIN = 0x00900000, LENGTH = 0x20000 /* entire ocram */
     RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 0x8000 /* TCMU 64 KiB */
 }
  
